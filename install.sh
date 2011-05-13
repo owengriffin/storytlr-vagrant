@@ -6,7 +6,6 @@
 
 # TODO:
 # * Set up the update script as a cron task
-# * Configurable apt-cache-ng proxy
 # * Automatic generation of passwords?
 # * Optional command line parameters to specify variables
 # * Correct conditional statements
@@ -17,7 +16,7 @@
 # * Allow Storytlr to be downloaded from the Git repository (done)
 # * Remove default Apache2 site and create one for Storytlr (done)
 # * Write custom config.ini based on script variables (done)
-
+# * Configurable apt-cache-ng proxy (done)
 
 # Location of the installation folder
 INSTALL_DIR="/var/www/storytlr"
@@ -44,10 +43,19 @@ USE_GIT=0
 # Storytlr on a server running on a different port number
 GIT_REPO="https://github.com/owengriffin/core.git"
 
-if [ ! -e "/etc/apt/apt.conf.d/apt-cache-ng" ] ; then
-    echo "Installing apt proxy configuration"
-    echo "Acquire::http { Proxy \"http://33.33.33.30:3142\"; };" > /etc/apt/apt.conf.d/apt-cache-ng
-    apt-get update
+# Set to 1 if you want to use an apt proxy server. I use a seperate virtual machine 
+# to cache debian packages
+USE_APT_PROXY=0
+# The URL of the HTTP proxy server used to cache debian packages
+APT_PROXY="http://33.33.33.30:3142"
+
+apt-get update
+
+if [ $USE_APT_PROXY -eq 1 ]; then 
+    if [ ! -e "/etc/apt/apt.conf.d/apt-cache-ng" ] ; then
+        echo "Installing apt proxy configuration"
+        echo "Acquire::http { Proxy \"$APT_PROXY\"; };" > /etc/apt/apt.conf.d/apt-cache-ng
+    fi
 fi
 
 # Ensure that all packages are installed without any user prompting
