@@ -183,4 +183,4 @@ if [ ! -e $CONFIG_FILE ] ; then
     echo "default.subtitle=I'm still busy setting this page" >> $CONFIG_FILE
 fi
 
-echo "Now go to http://localhost/storytlr"
+echo "Now go to http://${SERVER_HOST}${SERVER_PATH}"
