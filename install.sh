@@ -5,16 +5,19 @@
 # This script expects to have the necessary privilages, so this invariably means root
 
 # TODO:
-# * Allow Storytlr to be downloaded from the Git repository (done)
-# * Remove default Apache2 site and create one for Storytlr (done)
-# * Write custom config.ini based on script variables (done)
 # * Set up the update script as a cron task
 # * Configurable apt-cache-ng proxy
 # * Automatic generation of passwords?
 # * Optional command line parameters to specify variables
-# * wget to download quietly (done)
 # * Correct conditional statements
 # * apt-get to download quietly
+# * Only restart apache2 if the configuration has changed
+# * Ensure that MySQL root password isn't blank
+# * wget to download quietly (done)
+# * Allow Storytlr to be downloaded from the Git repository (done)
+# * Remove default Apache2 site and create one for Storytlr (done)
+# * Write custom config.ini based on script variables (done)
+
 
 # Location of the installation folder
 INSTALL_DIR="/var/www/storytlr"
