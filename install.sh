@@ -19,7 +19,7 @@
 # * Configurable apt-cache-ng proxy (done)
 
 # Location of the installation folder
-INSTALL_DIR="/var/www/storytlr"
+INSTALL_DIR="/usr/local/storytlr"
 # The name of the MySQL database to use
 DATABASE_NAME="storytlr"
 # MySQL database username
@@ -28,9 +28,9 @@ DATABASE_USER="storytlr"
 DATABASE_PASSWORD="123456"
 
 # Hostname of the machine hosting 
-SERVER_HOST="33.33.33.10"
+SERVER_HOST="vagrant"
 # Location of storytlr on the server
-SERVER_PATH="/storytlr/"
+SERVER_PATH="/"
 
 # Administrator username
 ADMIN_USER="admin"
@@ -45,9 +45,17 @@ GIT_REPO="https://github.com/owengriffin/core.git"
 
 # Set to 1 if you want to use an apt proxy server. I use a seperate virtual machine 
 # to cache debian packages
-USE_APT_PROXY=0
+USE_APT_PROXY=1
 # The URL of the HTTP proxy server used to cache debian packages
 APT_PROXY="http://33.33.33.30:3142"
+
+if [ "$INSTALL_DIR" == "/var/www/" ] ; then
+    echo "Installation in the root folder may cause this script to fail, miserably."
+    exit
+fi
+
+# Ensure that this installation folder exists
+mkdir -p $INSTALL_DIR
 
 apt-get update
 
@@ -65,8 +73,9 @@ export DEBIAN_FRONTEND=noninteractive
 echo "Installing debian packages"
 apt-get install -yqq apache2 php5 mcrypt php5-mcrypt php5-curl php5-dev mysql-server mysql-client libmysqlclient-dev php5-mysql
 
-if [ -d $INSTALL_DIR ]; then
-    echo "$INSTALL_DIR already exists, skipping download"
+EXISTS=$(ls -ltra $INSTALL_DIR | wc -l)
+if [ $EXISTS -eq 0 ]; then
+    echo "$INSTALL_DIR already exists and has content, skipping download"
 else
     if [ "$USE_GIT" -eq 1 ]; then
         echo "Installing Git"
@@ -77,11 +86,13 @@ else
     else
         # Download the latest Storytlr release
         if [ ! -e "/tmp/storytlr-latest.tgz" ] ; then
+            echo "Downloading latest Storytlr"
             wget --quiet -O /tmp/storytlr-latest.tgz http://github.com/downloads/storytlr/core/storytlr-latest.tgz --no-check-certificate
         fi
         # Extract the Storytlr archive into the /var/www/ folder
         mkdir $INSTALL_DIR -p
         cd $INSTALL_DIR
+        echo "Extracting archive"
         tar --strip-components=1 -zx -f /tmp/storytlr-latest.tgz
     fi
 fi
@@ -151,15 +162,28 @@ fi
 # Enable Apache2 mod_rewrite
 a2enmod rewrite
 
+# Disable default Apache2 site
+a2dissite default
+
 # Write Apache2 site configuration
-CONFIG_FILE="/etc/apache2/conf.d/storytlr"
+CONFIG_FILE="/etc/apache2/sites-enabled/storytlr"
 if [ ! -e $CONFIG_FILE ]; then
-    echo "<Directory $INSTALL_DIR>" > $CONFIG_FILE
+    echo "NameVirtualHost *:80" > $CONFIG_FILE
+    echo "<VirtualHost *:80>" >> $CONFIG_FILE
+    echo "DocumentRoot $INSTALL_DIR" >> $CONFIG_FILE
+    echo "ServerName $SERVER_HOST" >> $CONFIG_FILE
     echo "Options Indexes FollowSymLinks MultiViews" >> $CONFIG_FILE
+    echo "<Directory $INSTALL_DIR>" >> $CONFIG_FILE
     echo "AllowOverride All" >> $CONFIG_FILE
     echo "Order allow,deny" >> $CONFIG_FILE
     echo "allow from all" >> $CONFIG_FILE
     echo "</Directory>" >> $CONFIG_FILE
+    echo "</VirtualHost>" >> $CONFIG_FILE
+fi
+
+# Remove default index.html if it exists
+if [ -e "$INSTALL_DIR/index.html" ]; then
+    rm "$INSTALL_DIR/index.html"
 fi
 
 # Restart Apache2 server
